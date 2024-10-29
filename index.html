@@ -5,7 +5,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance Calculator</title>
     <style>
-        /* (Your CSS styling remains the same) */
+        /* Retained UI Styling */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #83a4d4, #b6fbff);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        .add-subject {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-subject input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .add-subject button {
+            padding: 10px 15px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .subject-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .subject-item {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #f1f8ff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .buttons button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 14px;
+        }
+
+        .attended-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .absent-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #d9534f;
+            color: white;
+        }
+
+        .percentage {
+            font-weight: bold;
+            color: #333;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
@@ -25,7 +134,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
 
     <script>
-        // Your Firebase configuration (from Firebase console)
+        // Firebase configuration from Firebase console
         const firebaseConfig = {
             apiKey: "AIzaSyCc8dPULa5HA_7sfUQ9FJ_6FDvaWr-gpY0",
             authDomain: "attendance-calculator-574b2.firebaseapp.com",
@@ -35,14 +144,14 @@
             appId: "1:293565518392:web:23a349bb49456c49588ccd"
         };
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
+        // Initialize Firebase and Firestore
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Fetch subjects from Firebase
         async function fetchSubjects() {
+            console.log("Fetching subjects from Firestore...");
             const subjectList = document.getElementById('subjectList');
-            subjectList.innerHTML = ''; // Clear current list
+            subjectList.innerHTML = '';
 
             const snapshot = await db.collection('subjects').get();
             snapshot.forEach(doc => {
@@ -52,7 +161,6 @@
             });
         }
 
-        // Add a new subject
         async function addSubject() {
             const subjectName = document.getElementById('subjectInput').value.trim();
             if (subjectName) {
@@ -61,13 +169,16 @@
                     attended: 0,
                     total: 0
                 });
+                console.log("Subject added:", docRef.id);
                 document.getElementById('subjectInput').value = '';
                 fetchSubjects();
+            } else {
+                console.log("Subject name cannot be empty");
             }
         }
 
-        // Update attendance
         async function markAttendance(id, type) {
+            console.log(`Marking ${type} for subject ID:`, id);
             const docRef = db.collection('subjects').doc(id);
             const doc = await docRef.get();
             const data = doc.data();
@@ -83,13 +194,12 @@
             fetchSubjects();
         }
 
-        // Delete a subject
         async function deleteSubject(id) {
+            console.log("Deleting subject ID:", id);
             await db.collection('subjects').doc(id).delete();
             fetchSubjects();
         }
 
-        // Render a subject item
         function renderSubject(id, name, attended, total, percentage) {
             const subjectList = document.getElementById('subjectList');
 
