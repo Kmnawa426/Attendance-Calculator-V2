@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance Calculator</title>
     <style>
-        /* Retained UI Styling */
+        /* General Styling */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -54,6 +54,10 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.3s;
+        }
+
+        .add-subject button:hover {
+            background: #45a049;
         }
 
         .subject-list {
@@ -110,6 +114,10 @@
             color: white;
         }
 
+        .buttons button:hover {
+            opacity: 0.9;
+        }
+
         .percentage {
             font-weight: bold;
             color: #333;
@@ -129,104 +137,64 @@
         <ul id="subjectList" class="subject-list"></ul>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-analytics.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+    <script>
+        let subjects = JSON.parse(localStorage.getItem('subjects')) || [];
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCc8dPULa5HA_7sfUQ9FJ_6FDvaWr-gpY0",
-            authDomain: "attendance-calculator-574b2.firebaseapp.com",
-            projectId: "attendance-calculator-574b2",
-            storageBucket: "attendance-calculator-574b2.appspot.com",
-            messagingSenderId: "293565518392",
-            appId: "1:293565518392:web:23a349bb49456c49588ccd",
-            measurementId: "G-GGZCF5TV04"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const db = getFirestore(app);
-
-        async function fetchSubjects() {
-            console.log("Fetching subjects from Firestore...");
-            const subjectList = document.getElementById('subjectList');
-            subjectList.innerHTML = '';
-
-            const querySnapshot = await getDocs(collection(db, 'subjects'));
-            querySnapshot.forEach(doc => {
-                const subject = doc.data();
-                const percentage = subject.total ? ((subject.attended / subject.total) * 100).toFixed(2) : 0;
-                renderSubject(doc.id, subject.name, subject.attended, subject.total, percentage);
-            });
+        function saveToLocalStorage() {
+            localStorage.setItem('subjects', JSON.stringify(subjects));
         }
 
-        async function addSubject() {
+        function addSubject() {
             const subjectName = document.getElementById('subjectInput').value.trim();
             if (subjectName) {
-                await addDoc(collection(db, 'subjects'), {
-                    name: subjectName,
-                    attended: 0,
-                    total: 0
-                });
-                console.log("Subject added:", subjectName);
+                subjects.push({ name: subjectName, attended: 0, total: 0 });
                 document.getElementById('subjectInput').value = '';
-                fetchSubjects();
-            } else {
-                console.log("Subject name cannot be empty");
+                saveToLocalStorage();
+                renderSubjects();
             }
         }
 
-        async function markAttendance(id, type) {
-            console.log(`Marking ${type} for subject ID:`, id);
-            const docRef = doc(db, 'subjects', id);
-            const docSnap = await getDoc(docRef);
-            const data = docSnap.data();
-
-            const newAttended = type === 'attended' ? data.attended + 1 : data.attended;
-            const newTotal = data.total + 1;
-
-            await updateDoc(docRef, {
-                attended: newAttended,
-                total: newTotal
-            });
-
-            fetchSubjects();
+        function markAttendance(index, type) {
+            if (type === 'attended') {
+                subjects[index].attended += 1;
+            }
+            subjects[index].total += 1;
+            saveToLocalStorage();
+            renderSubjects();
         }
 
-        async function deleteSubject(id) {
-            console.log("Deleting subject ID:", id);
-            await deleteDoc(doc(db, 'subjects', id));
-            fetchSubjects();
+        function deleteSubject(index) {
+            subjects.splice(index, 1);
+            saveToLocalStorage();
+            renderSubjects();
         }
 
-        function renderSubject(id, name, attended, total, percentage) {
+        function renderSubjects() {
             const subjectList = document.getElementById('subjectList');
+            subjectList.innerHTML = '';
 
-            const li = document.createElement('li');
-            li.classList.add('subject-item');
+            subjects.forEach((subject, index) => {
+                const percentage = subject.total ? ((subject.attended / subject.total) * 100).toFixed(2) : 0;
+                const li = document.createElement('li');
+                li.classList.add('subject-item');
 
-            li.innerHTML = `
-                <div class="subject-header">
-                    <span>${name}</span>
-                    <span class="percentage">${percentage}%</span>
-                </div>
-                <div class="buttons">
-                    <button class="attended-btn" onclick="markAttendance('${id}', 'attended')">Attended</button>
-                    <button class="absent-btn" onclick="markAttendance('${id}', 'absent')">Absent</button>
-                    <button class="delete-btn" onclick="deleteSubject('${id}')">Delete</button>
-                </div>
-            `;
-
-            subjectList.appendChild(li);
+                li.innerHTML = `
+                    <div class="subject-header">
+                        <span>${subject.name}</span>
+                        <span class="percentage">${percentage}%</span>
+                    </div>
+                    <div class="buttons">
+                        <button class="attended-btn" onclick="markAttendance(${index}, 'attended')">Attended</button>
+                        <button class="absent-btn" onclick="markAttendance(${index}, 'absent')">Absent</button>
+                        <button class="delete-btn" onclick="deleteSubject(${index})">Delete</button>
+                    </div>
+                `;
+                subjectList.appendChild(li);
+            });
         }
 
-        // Load subjects on page load
-        fetchSubjects();
+        // Render subjects on page load
+        renderSubjects();
     </script>
 </body>
 </html>
